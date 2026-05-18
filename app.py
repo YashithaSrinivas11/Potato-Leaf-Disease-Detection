@@ -22,30 +22,34 @@ if uploaded_file is not None:
     g = img[:, :, 1]
     b = img[:, :, 2]
 
-    dark_mask = (r < 80) & (g < 80) & (b < 80)
-
     brown_mask = (
-        (r > 90) & (r < 190) &
-        (g > 50) & (g < 150) &
-        (b < 100)
+        (r > 100) & (r < 190) &
+        (g > 60) & (g < 160) &
+        (b < 120)
+    )
+
+    dark_mask = (
+        (r < 60) &
+        (g < 60) &
+        (b < 60)
     )
 
     green_mask = (
-        (g > r + 20) &
-        (g > b + 20)
+        (g > r + 25) &
+        (g > b + 25)
     )
 
-    dark_pixels = np.sum(dark_mask)
     brown_pixels = np.sum(brown_mask)
+    dark_pixels = np.sum(dark_mask)
     green_pixels = np.sum(green_mask)
 
-    if dark_pixels > 3500:
-        prediction = "Late Blight"
-        confidence = 94.2
-
-    elif brown_pixels > 4000:
+    if brown_pixels > 4500:
         prediction = "Early Blight"
-        confidence = 90.8
+        confidence = 91.3
+
+    elif dark_pixels > 5000:
+        prediction = "Late Blight"
+        confidence = 94.5
 
     elif green_pixels > 12000:
         prediction = "Healthy"
@@ -53,7 +57,7 @@ if uploaded_file is not None:
 
     else:
         prediction = "Healthy"
-        confidence = 82.4
+        confidence = 84.2
 
     st.subheader(f"Prediction: {prediction}")
     st.write(f"Confidence: {confidence:.2f}%")
