@@ -22,65 +22,60 @@ if uploaded_file is not None:
     b = img[:, :, 2]
 
     # ------------------------------------------------
-    # STEP 1: Detect LEAF REGION (remove background)
+    # STEP 1 — Detect PLANT REGION (not only green)
     # ------------------------------------------------
-    leaf_mask = (
-        (g > 60) &
-        (g > r * 0.8) &
-        (g > b * 0.8)
+    plant_mask = (
+        (r > 40) | (g > 40) | (b > 40)
     )
 
-    leaf_pixels = np.sum(leaf_mask)
-
-    if leaf_pixels == 0:
-        st.error("Leaf not detected properly")
-        st.stop()
+    plant_pixels = np.sum(plant_mask)
 
     # ------------------------------------------------
-    # STEP 2: Disease Masks ONLY inside leaf
+    # STEP 2 — Disease Detection
     # ------------------------------------------------
 
-    # Healthy green
-    healthy_mask = leaf_mask & (
+    # Healthy Green Pixels
+    healthy_mask = plant_mask & (
         (g > r + 20) &
         (g > b + 20)
     )
 
     # Early Blight (brown lesions)
-    early_mask = leaf_mask & (
+    early_mask = plant_mask & (
         (r > 110) &
+        (g > 60) &
         (g < 150) &
         (b < 120)
     )
 
-    # Late Blight (dark infected regions)
-    late_mask = leaf_mask & (
-        (r < 80) &
-        (g < 80) &
-        (b < 80)
+    # Late Blight (dark infected areas)
+    late_mask = plant_mask & (
+        (r < 90) &
+        (g < 90) &
+        (b < 90)
     )
 
-    healthy_ratio = np.sum(healthy_mask) / leaf_pixels
-    early_ratio = np.sum(early_mask) / leaf_pixels
-    late_ratio = np.sum(late_mask) / leaf_pixels
+    healthy_ratio = np.sum(healthy_mask) / plant_pixels
+    early_ratio = np.sum(early_mask) / plant_pixels
+    late_ratio = np.sum(late_mask) / plant_pixels
 
     # ------------------------------------------------
-    # STEP 3: Classification
+    # STEP 3 — FINAL CLASSIFICATION
     # ------------------------------------------------
-    if healthy_ratio > 0.65:
-        prediction = "✅ Healthy"
-        confidence = healthy_ratio * 100
-
-    elif late_ratio > 0.15:
+    if late_ratio > 0.18:
         prediction = "⚫ Late Blight"
         confidence = late_ratio * 100
 
-    elif early_ratio > 0.10:
+    elif early_ratio > 0.12:
         prediction = "🟤 Early Blight"
         confidence = early_ratio * 100
 
+    elif healthy_ratio > 0.35:
+        prediction = "✅ Healthy"
+        confidence = healthy_ratio * 100
+
     else:
-        prediction = "⚠️ Mild Infection"
+        prediction = "⚠️ Mixed Infection"
         confidence = 75
 
     # ------------------------------------------------
